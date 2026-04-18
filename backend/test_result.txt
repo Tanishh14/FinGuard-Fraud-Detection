@@ -1,0 +1,17 @@
+﻿SMTP_HOST: smtp.gmail.com
+SMTP_PORT: 587
+SMTP_USER: team.finguard1@gmail.com
+SMTP_FROM: team.finguard1@gmail.com
+USE_CONSOLE_MAILER: False
+Sending test OTP to team.finguard1@gmail.com...
+[ERROR] Failed to send email via SMTP: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 41be03b00d2f7-c70b71a7ac6sm3804346a12.10 - gsmtp')
+[INFO] Falling back to Console Mailer for development...
+
+==================================================
+FALLBACK CONSOLE EMAIL TO: team.finguard1@gmail.com
+SUBJECT: FinGuard - Test Connection OTP
+OTP: 123456
+PURPOSE: Test Connection
+==================================================
+
+Result: True

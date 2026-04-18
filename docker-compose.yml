@@ -1,0 +1,172 @@
+version: '3.8'
+
+# FinGuard AI 2.0 - Sovereign Architecture
+# Target: Sub-90ms Fraud Orchestration with strict PII Isolation
+
+networks:
+  sealed-zone-network:
+    # THE ARCHITECTURAL "FIREWALL"
+    # Internal: true ensures this network has ZERO external path.
+    # The Narrative Zone (LLM) cannot reach this network.
+    driver: bridge
+    internal: true 
+  
+  narrative-zone-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  zookeeper_data:
+
+services:
+  # =================================================================
+  # SEALED ZONE: RAW DATA & EVENT STREAMING (PII Exists Here)
+  # =================================================================
+  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - sealed-zone-network
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - zookeeper
+    networks:
+      - sealed-zone-network
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    # Use exact command overrides to auto-create topics with partitions for parallel GNN/Anomaly
+    # This guarantees the sub-90ms streaming performance target from day zero.
+    command: >
+      bash -c "
+        /etc/confluent/docker/run &
+        KAFKA_PID=$$!
+        echo 'Waiting for Kafka to start...'
+        sleep 10
+        kafka-topics --create --if-not-exists --bootstrap-server localhost:9092 --partitions 4 --replication-factor 1 --topic raw_transactions
+        kafka-topics --create --if-not-exists --bootstrap-server localhost:9092 --partitions 4 --replication-factor 1 --topic enriched_transactions
+        kafka-topics --create --if-not-exists --bootstrap-server localhost:9092 --partitions 4 --replication-factor 1 --topic ml_scoring_results
+        wait $$KAFKA_PID
+      "
+
+  jobmanager:
+    image: flink:1.18.0-scala_2.12
+    networks:
+      - sealed-zone-network
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+
+  taskmanager:
+    image: flink:1.18.0-scala_2.12
+    depends_on:
+      - jobmanager
+    networks:
+      - sealed-zone-network
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 4 # Enables the parallel execution pipeline
+        
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: finguard_admin
+      POSTGRES_PASSWORD: secure_password_123
+      POSTGRES_DB: finguard_v2
+    networks:
+      - sealed-zone-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finguard_admin -d finguard_v2"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - sealed-zone-network
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  # =================================================================
+  # BRIDGING ZONE: THE FASTAPI ORCHESTRATOR
+  # =================================================================
+  
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    # Needs access to BOTH networks to perform the PII stripping transformation
+    networks:
+      - sealed-zone-network
+      - narrative-zone-network
+    environment:
+      - DATABASE_URL=postgresql://finguard_admin:secure_password_123@db:5432/finguard_v2
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REDIS_URL=redis://redis:6379/0
+
+  # =================================================================
+  # NARRATIVE ZONE: NO DIRECT ACCESS TO RAW DATA
+  # =================================================================
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    # Only access to narrative-zone-network, enforcing sovereignty
+    networks:
+      - narrative-zone-network
+
+  # =================================================================
+  # AUTOMATION: FLINK JOB SUBMITTER
+  # =================================================================
+  
+  flink-job-submitter:
+    image: flink:1.18.0-scala_2.12
+    depends_on:
+      - jobmanager
+      - kafka
+    networks:
+      - sealed-zone-network
+    volumes:
+      - ./backend/app/realtime:/opt/flink/usrlib/realtime
+    # This automatically submits our PyFlink script to the cluster on startup
+    command: >
+      bash -c "
+        echo 'Waiting for JobManager...'
+        while ! nc -z jobmanager 8081; do sleep 2; done
+        echo 'Submitting FinGuard Streaming Job...'
+        flink run -py /opt/flink/usrlib/realtime/flink_streaming.py -d
+      "

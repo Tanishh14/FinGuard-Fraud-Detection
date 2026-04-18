@@ -1,0 +1,44 @@
+graph TD
+    subgraph "Frontend Layer (React/Vite)"
+        UD[User Dashboard]
+        AD[Analyst Dashboard]
+        DI[Demo Injector]
+        LRD[Live Risk Dashboard]
+    end
+
+    subgraph "API Gateway (FastAPI)"
+        TR[Transaction Router]
+        AR[Analytics Router]
+        SP[Scoring Pipeline]
+    end
+
+    subgraph "ML Intelligence (Ensemble)"
+        AE[Autoencoder - Behavioral]
+        IF[Isolation Forest - Anomaly]
+        GNN[Graph Neural Network - Network]
+    end
+
+    subgraph "Data & Storage"
+        DB[(SQLite/SQLAlchemy)]
+    end
+
+    %% Flow
+    UD --> TR
+    DI -.-> UD
+    TR --> SP
+    SP --> AE
+    SP --> IF
+    SP --> GNN
+    SP --> DB
+    AR --> DB
+    AD --> AR
+    AD --> TR
+    LRD --> AR
+
+    classDef primary fill:#2563eb,color:#fff,stroke:#1e40af,stroke-width:2px;
+    classDef secondary fill:#4f46e5,color:#fff,stroke:#3730a3,stroke-width:2px;
+    classDef storage fill:#f8fafc,stroke:#e2e8f0,stroke-width:2px;
+
+    class SP,AE,IF,GNN primary;
+    class UD,AD,DI,LRD secondary;
+    class DB storage;

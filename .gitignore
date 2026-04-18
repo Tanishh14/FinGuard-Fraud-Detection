@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+backend/venv/
+
+# Environment variables
+.env
+.env.*
+
+# Node
+node_modules/
+
+# ML / large files
+*.pt
+*.pth
+*.h5
+*.ckpt
+
+# Data (optional)
+backend/data/*.csv
+
+# Build files
+build/
+dist/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
