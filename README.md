@@ -1,81 +1,130 @@
-# FinGuard AI - Bank-Grade Fraud Detection System
+🚀 FinGuard AI
+Real-Time Fraud Detection & Risk Intelligence System
 
-FinGuard AI is a state-of-the-art financial fraud detection platform designed to meet production bank-grade standards. It utilizes a multi-model ML architecture, real-time behavioral profiling, and a robust rule engine to detect anomalies and fraudulent patterns with high precision.
+FinGuard is a production-grade AI system designed to detect fraudulent financial transactions in real time using anomaly detection, graph intelligence, and explainable AI.
 
----
+Unlike traditional rule-based systems, FinGuard identifies hidden behavioral patterns and relationships to catch sophisticated fraud scenarios.
 
-## 🚀 Quick Start
+🧠 Problem
 
-### 1. Prerequisites
-- **Python**: 3.10+
-- **Node.js**: 18+
-- **Database**: SQLite (default for development) or PostgreSQL
+Digital payment systems face:
 
-### 2. Backend Setup (ML & API)
-```bash
-# Navigate to backend directory (CRITICAL: Do not go into backend/app)
-cd backend
+Static rule-based fraud detection (easy to bypass)
+Delayed detection (post-transaction)
+Inability to detect complex fraud networks
+High manual review effort
+💡 Solution
+
+FinGuard provides:
+
+⚡ Real-time fraud scoring
+🧠 AI-driven anomaly detection
+🕸️ Graph-based fraud pattern detection
+📊 Explainable decision-making
+🔐 Secure, scalable system design
+🏗️ System Architecture
+
+🔹 Key Components
+1. Data Ingestion Layer
+Kafka-based transaction streaming
+Handles real-time user transaction input
+2. Feature Engineering (Apache Flink)
+Velocity checks (rapid transactions)
+Device switching detection
+Cross-bank behavioral patterns
+3. AI Core Models
+Autoencoder → Detects behavioral anomalies
+Isolation Forest → Identifies outliers
+Graph Neural Network (GNN) → Detects fraud rings and relationships
+Rules Engine → Business logic validation
+4. Validation Gate (8-Point Check)
+
+Ensures model reliability before decision:
+
+Schema validation
+Confidence scoring
+PII checks
+Score stability
+Rule alignment
+5. Decision Engine
+Combines model outputs
+Generates calibrated fraud probability
+Builds evidence pack for explainability
+6. Explainability Layer (LLM-Based)
+Uses LLM (GPT/LLaMA style)
+Generates human-readable fraud explanations
+Works only on evidence data (no hallucination risk)
+7. Output Systems
+📊 Real-time dashboard (Streamlit)
+🧑‍💼 Analyst review portal
+📜 Audit logs
+8. Audit & Replay System
+PostgreSQL append-only logs
+Stores:
+Model outputs
+Evidence snapshots
+LLM explanations
+Enables replay for debugging & compliance
+⚙️ Tech Stack
+🔹 AI / ML
+Python
+TensorFlow / PyTorch
+Scikit-learn
+NetworkX / Graph ML
+🔹 Backend & Infra
+FastAPI (Prediction Service)
+Redis (Low-latency caching)
+Kafka (Streaming)
+Apache Flink (Feature processing)
+🔹 Data & Storage
+PostgreSQL (Audit logs)
+Graph DB (Fraud relationships)
+🔹 Frontend
+Streamlit Dashboard
+📊 Key Features
+✅ Real-time fraud detection (<100ms inference design)
+✅ Hybrid AI models (Anomaly + Graph + Rules)
+✅ Explainable AI decisions
+✅ End-to-end pipeline (data → model → API → dashboard)
+✅ Secure architecture with PII isolation
+✅ Scalable and modular system design
+📈 Impact
+Detects complex fraud patterns beyond rule-based systems
+Reduces manual fraud investigation effort
+Enables faster and more reliable decision-making
+Designed for high-scale fintech environments
+
+🧪 How to Run
+# Clone repo
+git clone https://github.com/your-username/finguard-ai.git
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Start the server (Must be run from the 'backend' directory)
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-- **Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
+# Run API
+uvicorn app:app --reload
 
-### 3. Frontend Setup
-```bash
-# Navigate to frontend
-cd frontend
+# Run dashboard
+streamlit run dashboard.py
+🔐 Security Considerations
+PII data isolated within secure boundary
+Evidence-based explainability (no raw data leakage)
+JWT-based authentication for APIs
+🧠 What Makes This Different
 
-# Install dependencies
-npm install
+This is not just an ML model.
 
-# Start Dev Server (Port 5173/5174)
-npm run dev
-```
+FinGuard is a complete system that combines:
 
----
+Machine Learning
+Backend Engineering
+System Design
+Real-world fintech constraints
+👨‍💻 Author
 
-## 🧠 Machine Learning Architecture
+Built end-to-end by a developer focused on production-grade AI systems, not just models.
 
-FinGuard uses a **Weighted Fusion Engine** (0.3 AE + 0.3 IF + 0.4 GNN) combined with a **Heuristic Override Layer**.
-
-### 1. Model Breakdown
-- **Autoencoder (AE)**: Neural-based reconstruction error detection for behavioral anomalies.
-- **Isolation Forest (IF)**: Tree-based anomaly detection for outlier isolation.
-- **Graph Neural Network (GNN)**: Analyzes user-merchant-device relationships to identify fraud rings.
-
-### 2. Heuristic Override (Bank-Grade Safety)
-Critical rules override ML scores to ensure 100% protection against extreme anomalies:
-- **₹1 Crore+ Rule**: Any transaction > ₹10,000,000 is blocked immediately.
-- **Extreme Jump Rule**: Transactions > 10x user's average are blocked.
-- **Velocity Rule**: High frequency (>10 tx/hr) triggers a security flag.
-
----
-
-## 💬 Explainability Engine
-
-FinGuard doesn't just block; it explains. The engine analyzes the delta between the transaction and the user's **Behavioral Profile**:
-- **Baseline Comparison**: Matches amount against user average (e.g., "Transaction is 500x higher than typical").
-- **Flag Descriptions**: Provides clear reasons like "Unusual Night Transaction" or "New Device Anomaly".
-- **Risk Confidence**: Displays a weighted percentage of how certain the system is about the risk.
-
----
-
-## 🧪 Testing Fraud Scenarios
-
-| Scenario | Input | Expected Result |
-| :--- | :--- | :--- |
-| **Normal** | ₹500 to Local Shop | **APPROVED** (Low Score) |
-| **Suspicious** | ₹20,000 at 2 AM | **FLAGGED** (Review Required) |
-| **Extreme** | ₹6,000,000,000 | **BLOCKED** (100% Risk) |
-
----
-
-## 👥 User Roles
-- **Customer**: Initiate secure payments.
-- **Fraud Analyst**: Review flagged items and investigate explanations.
-- **Admin**: Configure ML thresholds and manage system health.
+⭐ Future Improvements
+Real-time model retraining pipeline
+Advanced GNN optimization
+Integration with live payment gateways
